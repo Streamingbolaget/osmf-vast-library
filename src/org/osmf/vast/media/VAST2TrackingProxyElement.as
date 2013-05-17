@@ -109,7 +109,7 @@ package org.osmf.vast.media
 			dispatcher.media = wrappedElement;
 			dispatcher.addEventListener(AudioEvent.MUTED_CHANGE, processMutedChange);
 			dispatcher.addEventListener(PlayEvent.PLAY_STATE_CHANGE, processPlayStateChange);
-			dispatcher.addEventListener(TimeEvent.COMPLETE, processComplete);
+			dispatcher.addEventListener(TimeEvent.COMPLETE, processComplete, false, int.MAX_VALUE);
 			dispatcher.addEventListener(LoadEvent.LOAD_STATE_CHANGE, processLoadStateChange);
 			dispatcher.media.addEventListener(MediaErrorEvent.MEDIA_ERROR, mediaError);
 			
@@ -120,6 +120,7 @@ package org.osmf.vast.media
 				var vpaidMetadata:VPAIDMetadata = vpaidElement.getMetadata(vpaidElement.metadataNamespaceURLs[0]) as VPAIDMetadata;
 				vpaidMetadata.addEventListener(MetadataEvent.VALUE_ADD, onMetadataValueAdded);
 				vpaidMetadata.addEventListener(MetadataEvent.VALUE_CHANGE, onMetadataValueChange);
+				
 			}
 
 			if(ProxyElement(this.proxiedElement).proxiedElement is VideoElement)
@@ -128,8 +129,6 @@ package org.osmf.vast.media
 				addMetadata(VASTMetadata.NAMESPACE, vastMetadata);
 				vastMetadata.addEventListener(MetadataEvent.VALUE_CHANGE, onMetadataValueChange);
 				vastMetadata.addEventListener(MetadataEvent.VALUE_ADD, onMetadataValueAdded);
-				
-				
 			}
 			
 			
@@ -141,7 +140,6 @@ package org.osmf.vast.media
 		
 		private function onMetadataValueAdded(e:MetadataEvent):void
 		{
-			
 			switch(e.key)
 			{
 				case VPAIDMetadata.AD_COLLAPSE:
@@ -257,7 +255,6 @@ package org.osmf.vast.media
 		
 		private function onMetadataValueChange(e:MetadataEvent):void
 		{
-			
 			switch(e.key)
 			{
 				case VPAIDMetadata.AD_COLLAPSE:
@@ -396,7 +393,7 @@ package org.osmf.vast.media
 		/**
 		 * @private
 		 */
-		private function processMutedChange(event:AudioEvent):void
+		override protected function processMutedChange(event:AudioEvent):void
 		{
 			//trace("MUTE == " + mute);
 			//trace("PLAYER VOLUME " + playerVolume);
@@ -418,7 +415,7 @@ package org.osmf.vast.media
 		//We need check to see if the play trait is playing. If so start tracking.		
 		private function processLoadStateChange(event:LoadEvent):void
 		{
-			//trace("Tracker Proxy LoadState: " + event.loadState);
+			// trace("Tracker Proxy LoadState: " + event.loadState);
 			if(event.loadState == LoadState.READY)
 			{
 				var playTrait:PlayTrait = getTrait(MediaTraitType.PLAY) as PlayTrait;
@@ -429,13 +426,6 @@ package org.osmf.vast.media
 						//trace("Firing Creative View");
 						fireEventOfType(VASTTrackingEventType.CREATIVE_VIEW);//Want to fire only for linear creatives. Nonlinear fires it's own AD_CREATIVE_VIEW
 						createClickThru();
-						if(ProxyElement(this.proxiedElement).proxiedElement.hasTrait(MediaTraitType.TIME))
-						{
-							
-							var timeTrait:TimeTrait = ProxyElement(this.proxiedElement).proxiedElement.getTrait(MediaTraitType.TIME) as TimeTrait;
-							timeTrait.addEventListener(TimeEvent.COMPLETE, onTimeComplete);
-						}
-				
 					}
 				}
 				if(playTrait.playState == PlayState.PLAYING)
@@ -448,7 +438,7 @@ package org.osmf.vast.media
 		/**
 		 * @private
 		 */
-		private function processPlayStateChange(event:PlayEvent):void
+		override protected function processPlayStateChange(event:PlayEvent):void
 		{
 			if (event.playState == PlayState.PLAYING)
 			{
@@ -479,7 +469,7 @@ package org.osmf.vast.media
 		/**
 		 * @private
 		 */
-		private function processComplete(event:TimeEvent):void
+		override protected function processComplete(event:TimeEvent):void
 		{
 			playheadTimer.stop();
 			
@@ -513,12 +503,12 @@ package org.osmf.vast.media
 			}
 		}
 		
-		private function fireEventOfType(eventType:VASTTrackingEventType, cbShared:Boolean = true):void
+		override protected function fireEventOfType(eventType:VASTTrackingEventType, cbShared:Boolean = true):void
 		{
 			var vastEvent:VASTTrackingEvent = eventsMap[eventType] as VASTTrackingEvent;
-			
 			if (vastEvent != null)
 			{
+				
 				for each (var vastURL:VASTUrl in vastEvent.urls)
 				{
 					//trace("------------------- " + vastURL.url);
@@ -543,7 +533,7 @@ package org.osmf.vast.media
 			}
 		}	
 		
-		private function onPlayheadTimer(event:TimerEvent):void
+		override protected function onPlayheadTimer(event:TimerEvent):void
 		{
 			// Check for 25%, 50%, and 75%.
 			var percent:Number = this.percentPlayback;

@@ -85,6 +85,7 @@ package org.osmf.vast.media
 		 */
 		public function VAST2ImpressionProxyElement(urls:Vector.<VASTUrl>, httpLoader:HTTPLoader=null, wrappedElement:MediaElement=null, cacheBust:CacheBuster = null)
 		{ 
+			
 			super(urls);
 			//TODO: Combine VASTImpressionProxyElement with VASTTrackingProxyElement
 			this.urls = urls;
@@ -94,7 +95,7 @@ package org.osmf.vast.media
 				cacheBuster = new CacheBuster()
 			else
 				cacheBuster = cacheBust;
-						
+				
 			impressionsRecorded = false;
 			waitForBufferingExit = false;
 			
@@ -110,7 +111,7 @@ package org.osmf.vast.media
 			
 			var loadTrait:LoadTrait = proxiedElement.getTrait(MediaTraitType.LOAD) as LoadTrait;
 			loadTrait.addEventListener(LoadEvent.LOAD_STATE_CHANGE, onLoadStateChange);
-			
+				
 			if(proxiedElement is VPAIDElement)
 			{
 				var vpaidElement:VPAIDElement = proxiedElement as VPAIDElement;
@@ -250,10 +251,17 @@ package org.osmf.vast.media
 				{
 					var beacon:Beacon = new Beacon(cacheBuster.cacheBustURL(vastUrl.url), httpLoader);
 					beacon.ping();
+					i++;
 				}
 			}
 		}
+		
+		// Preventing dubble tracking from the super class
+		override protected function recordImpressions():void {
+			
+		}
 
+		private var i:int = 0;
 		private var fireImpression:Boolean = true;
 		private var dispatcher:TraitEventDispatcher;
 		private var urls:Vector.<VASTUrl>;

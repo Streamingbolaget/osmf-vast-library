@@ -29,6 +29,7 @@ package org.osmf.vast.media
 	import flash.net.URLRequest;
 	import flash.utils.Dictionary;
 	import flash.utils.Timer;
+	import flash.utils.describeType;
 	
 	import org.osmf.containers.MediaContainer;
 	import org.osmf.elements.ProxyElement;
@@ -98,7 +99,12 @@ package org.osmf.vast.media
 		 **/
 		override public function set proxiedElement(value:MediaElement):void
 		{
-			if (value != proxiedElement)
+			
+			// Check if this instance is extended by the VAST2 implementation. 
+			// Dont register any listners if thats the case.
+			var classDescription:XML = describeType(this);
+			
+			if (value != proxiedElement && classDescription.@name != 'org.osmf.vast.media::VAST2TrackingProxyElement')
 			{
 				if (dispatcher != null)
 				{
@@ -114,7 +120,7 @@ package org.osmf.vast.media
 					dispatcher = new TraitEventDispatcher();
 					dispatcher.media = value;
 					dispatcher.addEventListener(AudioEvent.MUTED_CHANGE, processMutedChange);
-					dispatcher.addEventListener(PlayEvent.PLAY_STATE_CHANGE, processPlayStateChange);
+					dispatcher.addEventListener(PlayEvent.PLAY_STATE_CHANGE, processPlayStateChange);					
 					dispatcher.addEventListener(TimeEvent.COMPLETE, processComplete);
 				}
 			}
@@ -125,7 +131,7 @@ package org.osmf.vast.media
 		/**
 		 * @private 
 		 */
-		private function processMutedChange(event:AudioEvent):void
+		protected function processMutedChange(event:AudioEvent):void
 		{
 			if (event.muted)
 			{
@@ -136,7 +142,7 @@ package org.osmf.vast.media
 		/**
 		 * @private
 		 */
-		private function processPlayStateChange(event:PlayEvent):void
+		protected function processPlayStateChange(event:PlayEvent):void
 		{
 			createClickThru();
 			
@@ -160,10 +166,7 @@ package org.osmf.vast.media
 			}
 		}
 		
-		/**
-		 * @private
-		 */
-		private function processComplete(event:TimeEvent):void
+		protected function processComplete(event:TimeEvent):void
 		{
 			playheadTimer.stop();
 			
@@ -184,8 +187,19 @@ package org.osmf.vast.media
 				var mediaContainer:MediaContainer = container as MediaContainer;
 				if (mediaContainer != null)
 				{
+
 					mediaContainer.buttonMode = true;
 					mediaContainer.addEventListener(MouseEvent.MOUSE_UP, onMediaElementClick, false, 0, true);
+					
+					if(ProxyElement(this.proxiedElement).proxiedElement.hasTrait(MediaTraitType.TIME)) {
+						
+						var timeTrait:TimeTrait = ProxyElement(this.proxiedElement).proxiedElement.getTrait(MediaTraitType.TIME) as TimeTrait;
+							timeTrait.addEventListener(TimeEvent.COMPLETE, function (event:TimeEvent):void {
+								mediaContainer.buttonMode = false;
+								mediaContainer.removeEventListener(MouseEvent.MOUSE_UP, onMediaElementClick);
+								timeTrait.removeEventListener(TimeEvent.COMPLETE, arguments.callee);
+							});
+					}
 				}
 			}
 		}
@@ -274,7 +288,10 @@ package org.osmf.vast.media
 			}
 		}
 		
-		private function fireEventOfType(eventType:VASTTrackingEventType):void
+		/**
+		 * Making this metod protected so we can override it later.
+		 */
+		protected function fireEventOfType(eventType:VASTTrackingEventType, cbShared:Boolean = true):void
 		{
 			var vastEvent:VASTTrackingEvent = eventsMap[eventType] as VASTTrackingEvent;
 			if (vastEvent != null)
@@ -291,7 +308,7 @@ package org.osmf.vast.media
 			}
 		}
 		
-		private function onPlayheadTimer(event:TimerEvent):void
+		protected function onPlayheadTimer(event:TimerEvent):void
 		{
 			// Check for 25%, 50%, and 75%.
 			var percent:Number = this.percentPlayback;

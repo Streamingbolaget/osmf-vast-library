@@ -310,6 +310,6 @@ package org.osmf.vast.model
 			  
 			  ];
 		
-		private var name:String;
+		public var name:String;
 	}
 }

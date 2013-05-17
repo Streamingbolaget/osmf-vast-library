@@ -169,7 +169,10 @@ package org.osmf.vast.media
 		// Internals
 		//
 		
-		private function recordImpressions():void
+		/**
+		 * Making this metod protected so we can override it later.
+		 */
+		protected function recordImpressions():void
 		{
 			impressionsRecorded = true;
 			
