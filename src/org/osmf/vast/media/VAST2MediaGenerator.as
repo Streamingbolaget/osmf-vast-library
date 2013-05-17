@@ -448,8 +448,12 @@ package org.osmf.vast.media
 			if (vastDocument.mediafileArray != null && vastDocument.mediafileArray.length > 0 && isLinear)
 			{
 				
+				// Save each mediaFile here...
+				var mediaFileURL:Vector.<VAST2MediaFile> = new Vector.<VAST2MediaFile>;
+				
 				for each(var mediaObj:Object in vastDocument.mediafileArray)
 				{
+					
 					var mediaFileObj:VAST2MediaFile = new VAST2MediaFile();
 					mediaFileObj.url = mediaObj.url;
 					mediaFileObj.delivery = mediaObj.delivery;
@@ -462,12 +466,12 @@ package org.osmf.vast.media
 					mediaFileObj.maintainAspectRatio = mediaObj.maintainAspectRatio;
 					mediaFileObj.apiFramework = mediaObj.apiFramework;
 
-					var mediaFileURL:Vector.<VAST2MediaFile> = new Vector.<VAST2MediaFile>;
 					mediaFileURL.push(mediaFileObj);
 				}
 
 				// Resolve the correct one.
 				var mediaFile:VAST2MediaFile = mediaFileResolver.resolveMediaFiles(mediaFileURL);
+				
 				if (mediaFile != null)
 				{
 					var mediaURL:String = mediaFile.url;
@@ -503,11 +507,9 @@ package org.osmf.vast.media
 
 					}
 					
-					
 					var impressions:VASTImpressionProxyElement = new VAST2ImpressionProxyElement(impressionArray, null, rootElement, cacheBuster);
 					var events:VASTTrackingProxyElement = new VAST2TrackingProxyElement(trackingEvents,null, impressions, cacheBuster,clickThru);
 					var vastMediaElement:MediaElement = events;
-					
 					mediaElements.push(vastMediaElement);
 
 
