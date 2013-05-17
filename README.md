@@ -3,7 +3,7 @@ OSMF VAST Library
 Fork of the OSMF VASTLibrary project available at http://sourceforge.net/projects/osmf.adobe/
 
 ---
-The VAST project provides support for VAST 1.0 and VAST 2.0.
+The OSMF VAST library provides support for VAST 1.0 and VAST 2.0 for media players using the Open Source Media Framework.
 
 Requires osmf-vpaid-library to compile.
 
