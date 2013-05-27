@@ -60,6 +60,7 @@ package org.osmf.vast.loader
 	 */
 	public class VASTLoader extends LoaderBase
 	{
+		private var timeoutTime:int;
 		/**
 		 * Constructor.
 		 * 
@@ -75,13 +76,14 @@ package org.osmf.vast.loader
 		 *  @playerversion AIR 1.5
 		 *  @productversion OSMF 1.0
 		 */
-		public function VASTLoader(maxNumWrapperRedirects:Number=10, httpLoader:HTTPLoader=null, trackingData:VAST2TrackingData = null)
+		public function VASTLoader(maxNumWrapperRedirects:Number=10, httpLoader:HTTPLoader=null, trackingData:VAST2TrackingData = null, timeoutTime:int = 10000)
 		{
 			super();
 			
 			this.maxNumWrapperRedirects = maxNumWrapperRedirects;
 			this.httpLoader = httpLoader != null ? httpLoader : new HTTPLoader();
 			this.trackingData = trackingData;		
+			this.timeoutTime = timeoutTime;
 		}
 		
 		/**
@@ -122,15 +124,15 @@ package org.osmf.vast.loader
 			// Start a timer and set it to trigger an event after 10sec which in turn changes the
 			// load_state_change to LOAD_ERROR which will trigger the main resource to load and play
 			// instead of the ad piece.
-			var timer:Timer = new Timer(10000);
-			timer.addEventListener(TimerEvent.TIMER, onTimeout);
-			timer.start();
+			var timeoutTimer:Timer = new Timer(10000);
+			timeoutTimer.addEventListener(TimerEvent.TIMER, timer_onTimeout);
+			timeoutTimer.start();
 			
-			function onTimeout(evt:TimerEvent):void
+			function timer_onTimeout(evt:TimerEvent):void
 			{
 				// An timeout has occured, we're giving up on loading the commecial resource,
 				// let's give it an error state and it'll continue to the main video.
-				timer.stop();
+				timeoutTimer.stop();
 				
 				httpLoader.removeEventListener(LoaderEvent.LOAD_STATE_CHANGE, onHTTPLoaderStateChange);
 				updateLoadTrait(loadTrait, LoadState.LOAD_ERROR);
@@ -154,9 +156,9 @@ package org.osmf.vast.loader
 				{
 					if (event.newState == LoadState.READY)
 					{
-						timer.stop();
+						timeoutTimer.stop();
 						// This is a terminal state, so remove all listeners.
-						timer.removeEventListener(TimerEvent.TIMER, onTimeout);
+						timeoutTimer.removeEventListener(TimerEvent.TIMER, timer_onTimeout);
 						httpLoader.removeEventListener(LoaderEvent.LOAD_STATE_CHANGE, onHTTPLoaderStateChange);
 						httpLoadTrait.removeEventListener(MediaErrorEvent.MEDIA_ERROR, onLoadTraitError);
 		
@@ -202,8 +204,8 @@ package org.osmf.vast.loader
 						// don't remove the error event listener, as that will be
 						// removed when the error event for this failure is
 						// dispatched.
-						timer.stop();
-						timer.removeEventListener(TimerEvent.TIMER, onTimeout);
+						timeoutTimer.stop();
+						timeoutTimer.removeEventListener(TimerEvent.TIMER, timer_onTimeout);
 						httpLoader.removeEventListener(LoaderEvent.LOAD_STATE_CHANGE, onHTTPLoaderStateChange);
 						
 						updateLoadTrait(loadTrait, event.newState);
@@ -213,10 +215,10 @@ package org.osmf.vast.loader
 			
 			function onLoadTraitError(event:MediaErrorEvent):void
 			{
-				timer.stop();
+				timeoutTimer.stop();
 				// Only remove this listener, as there will be a corresponding
 				// event for the load failure.
-				timer.removeEventListener(TimerEvent.TIMER, onTimeout);
+				timeoutTimer.removeEventListener(TimerEvent.TIMER, timer_onTimeout);
 				httpLoadTrait.removeEventListener(MediaErrorEvent.MEDIA_ERROR, onLoadTraitError);
 				
 				loadTrait.dispatchEvent(event.clone());
